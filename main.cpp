@@ -10,7 +10,8 @@
 #include <math.h>
 
 #include <sys/types.h>
-#include <dirent.h>
+//#include <dirent.h>
+#include <tchar.h>
 
 
 // Includes CUDA
@@ -74,36 +75,23 @@ static void get_subfolders(
                            const char *dirname,
                            vector<string> &subfolders)
 {
-    DIR *dir;
-    struct dirent *ent;
+	TCHAR tchar_dirname[256];
+	_stprintf_s(tchar_dirname, _T("%S*"), dirname);
 
-    // Open directory stream
-    dir = opendir (dirname);
-    if (dir != NULL) {
-        //cout << "Dirname is " << dirname << endl;
-        //cout << "Dirname type is " << ent->d_type << endl;
-        //cout << "Dirname type DT_DIR " << DT_DIR << endl;
-
-        // Print all files and directories within the directory
-        while ((ent = readdir (dir)) != NULL) {
-            //cout << "INSIDE" << endl;
-            //if(ent->d_type == DT_DIR)
-            {
-                char* name = ent->d_name;
-                if(strcmp(name,".") == 0 || strcmp(ent->d_name,"..") == 0)
-                    continue;
-                //printf ("dir %s/\n", name);
-                subfolders.push_back(string(name));
-            }
-        }
-
-        closedir (dir);
-
-    } else {
-        // Could not open directory
-        printf ("Cannot open directory %s\n", dirname);
-        exit (EXIT_FAILURE);
-    }
+	WIN32_FIND_DATA  fd;///FindFastÇÃèâä˙åãâ 
+	HANDLE h = FindFirstFileEx(tchar_dirname, FindExInfoStandard,
+		&fd, FindExSearchNameMatch, NULL, 0);
+	//if (dir != NULL) {
+	do {
+		if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			continue;
+		}
+		else{
+			subfolders.push_back(string(fd.cFileName));
+		}
+	} while (FindNextFile(h, &fd));
+	FindClose(h);
+	sort(subfolders.begin(), subfolders.end());
 }
 
 static void print_help ()
